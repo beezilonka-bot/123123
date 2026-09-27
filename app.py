@@ -102,9 +102,10 @@ def radar_response():
         analyses = recent_analyses(20)
         stored = recent_opportunities(20)
         opportunities = []
+        profile = account_topic_profile(account_posts(1000))
         for i, event in enumerate(events[:10], 1):
             analysis = analyses.get(event["id"]) or analyze_event(event)
-            account_relevance = account_topic_relevance(event["title"], account_topic_profile(account_posts(1000)))
+            account_relevance = account_topic_relevance(event["title"], profile)
             opportunities.append({
                 "rank": i,
                 "event_id": event["id"],
