@@ -8,7 +8,6 @@ from radar.cluster import cluster_items, score_events
 from radar.collector import collect_feed
 from radar.x_import import parse_payload
 from radar.generator import generate_post
-from radar.generator import generate_post
 
 from radar.storage import (
     enabled as db_enabled,
@@ -235,6 +234,15 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = urlparse(self.path).path
         try:
+            if path == "/":
+                with open(os.path.join(os.path.dirname(__file__), "mobile.html"), "rb") as fh:
+                    body = fh.read()
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
             if path == "/health":
                 return self._json(200, {"ok": True, "service": "123123-radar",
                                         "database_enabled": db_enabled(),

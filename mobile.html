@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>123123 · 一键推文</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;max-width:720px;margin:auto;padding:18px;background:#f6f6f6;color:#111}
+main{background:#fff;border-radius:16px;padding:18px;box-shadow:0 2px 14px #0001}
+textarea,input,button{box-sizing:border-box;width:100%;font:inherit;border:1px solid #ddd;border-radius:10px;padding:12px}
+textarea{min-height:130px;resize:vertical}button{margin-top:10px;background:#111;color:#fff;border:0;font-weight:600}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.card{margin-top:14px;padding:14px;background:#f7f7f7;border-radius:12px;white-space:pre-wrap}.muted{color:#666;font-size:13px}
+</style>
+<main><h2>123123 · 一键推文</h2>
+<p class="muted">输入主题，或直接使用“今日值得写”。结果只生成草稿，不自动发布。</p>
+<input id="token" type="password" placeholder="X-Radar-Token（仅本机 session 保存）">
+<textarea id="text" placeholder="例如：为什么 AI 产品更需要可靠的工作流，而不只是更大的模型？"></textarea>
+<div class="row"><button onclick="generate('idea')">生成推文</button><button onclick="generate('today')">今日值得写</button></div>
+<div id="out"></div></main>
+<script>
+const $=id=>document.getElementById(id);
+async function generate(mode){
+  const token=$('token').value.trim(); if(!token){alert('请输入 token');return}
+  sessionStorage.setItem('radar_token',token);
+  const body={mode}; if(mode!=='today') body.text=$('text').value.trim();
+  if(mode!=='today'&&!body.text){alert('请输入主题');return}
+  $('out').innerHTML='<div class="card">生成中…</div>';
+  try{
+    const r=await fetch('/generate',{method:'POST',headers:{'Content-Type':'application/json','X-Radar-Token':token},body:JSON.stringify(body)});
+    const x=await r.json(); if(!r.ok) throw new Error(x.error||'请求失败');
+    $('out').innerHTML='<div class="card"><b>主稿</b>\n'+x.post+'\n\n<b>备选</b>\n'+(x.alternatives||[]).join('\n\n')+'\n\n<b>角度</b> '+(x.angle||'')+'\n\n<b>不确定性</b> '+(x.uncertainty||'')+'</div>';
+  }catch(e){$('out').innerHTML='<div class="card">错误：'+e.message+'</div>'}
+}
+$('token').value=sessionStorage.getItem('radar_token')||'';
+</script>
