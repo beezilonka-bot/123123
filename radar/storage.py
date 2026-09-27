@@ -40,6 +40,19 @@ CREATE TABLE IF NOT EXISTS event_analyses (
     suggested_angles JSONB, model TEXT, analyzed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_analysis_event_time ON event_analyses(event_id, analyzed_at DESC);
+CREATE TABLE IF NOT EXISTS account_posts (
+    id TEXT PRIMARY KEY, external_id TEXT UNIQUE, text TEXT NOT NULL,
+    published_at TIMESTAMPTZ, impressions BIGINT DEFAULT 0, likes BIGINT DEFAULT 0,
+    replies BIGINT DEFAULT 0, reposts BIGINT DEFAULT 0, bookmarks BIGINT DEFAULT 0,
+    quotes BIGINT DEFAULT 0, profile_visits BIGINT DEFAULT 0,
+    source TEXT NOT NULL DEFAULT 'x', imported_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_account_posts_published ON account_posts(published_at DESC);
+CREATE TABLE IF NOT EXISTS account_metrics (
+    id BIGSERIAL PRIMARY KEY, post_id TEXT NOT NULL REFERENCES account_posts(id),
+    metric_name TEXT NOT NULL, metric_value DOUBLE PRECISION NOT NULL,
+    calculated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 CREATE TABLE IF NOT EXISTS content_opportunities (
     id TEXT PRIMARY KEY, event_id TEXT NOT NULL REFERENCES events(id),
     title TEXT NOT NULL, why_now TEXT, audience TEXT, angle TEXT,
@@ -178,6 +191,39 @@ def record_opportunity(opportunity: dict[str, Any]) -> None:
          opportunity.get("suggested_format","single_post"),opportunity.get("priority",0),
          opportunity.get("expires_at")))
         conn.commit()
+
+
+def persist_account_posts(posts: list[dict[str, Any]]) -> int:
+    if not enabled():
+        return 0
+    init_db()
+    with _connect() as conn, conn.cursor() as cur:
+        for post in posts:
+            cur.execute("""INSERT INTO account_posts
+            (id,external_id,text,published_at,impressions,likes,replies,reposts,bookmarks,quotes,profile_visits,source)
+            VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            ON CONFLICT(id) DO UPDATE SET text=EXCLUDED.text,published_at=EXCLUDED.published_at,
+            impressions=EXCLUDED.impressions,likes=EXCLUDED.likes,replies=EXCLUDED.replies,
+            reposts=EXCLUDED.reposts,bookmarks=EXCLUDED.bookmarks,quotes=EXCLUDED.quotes,
+            profile_visits=EXCLUDED.profile_visits""",
+            (post["id"],post.get("external_id"),post["text"],post.get("published_at"),
+             post.get("impressions",0),post.get("likes",0),post.get("replies",0),
+             post.get("reposts",0),post.get("bookmarks",0),post.get("quotes",0),
+             post.get("profile_visits",0),post.get("source","x")))
+    conn.commit()
+    return len(posts)
+
+
+def account_posts(limit: int = 100) -> list[dict[str, Any]]:
+    if not enabled():
+        return []
+    init_db()
+    with _connect() as conn, conn.cursor() as cur:
+        cur.execute("""SELECT id,external_id,text,published_at,impressions,likes,replies,
+                       reposts,bookmarks,quotes,profile_visits
+                       FROM account_posts ORDER BY published_at DESC NULLS LAST LIMIT %s""",(limit,))
+        cols=[d.name for d in cur.description]
+        return [dict(zip(cols,row)) for row in cur.fetchall()]
 
 
 def cleanup_duplicate_events() -> int:
