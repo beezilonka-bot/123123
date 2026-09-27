@@ -7,6 +7,8 @@ from radar.analyzer import analyze_event, llm_configured
 from radar.cluster import cluster_items, score_events
 from radar.collector import collect_feed
 from radar.x_import import parse_payload
+from radar.generator import generate_post
+from radar.generator import generate_post
 
 from radar.storage import (
     enabled as db_enabled,
@@ -148,6 +150,17 @@ def radar_response():
     }
 
 
+def generation_context(request: dict) -> dict:
+    posts = account_posts(20) if db_enabled() else []
+    opportunities = recent_opportunities(10) if db_enabled() else []
+    selected = request.get("opportunity_id")
+    if selected:
+        opportunities = [x for x in opportunities if x.get("id") == selected or x.get("event_id") == selected]
+    elif request.get("mode") in ("today", "opportunity"):
+        opportunities = opportunities[:1]
+    return {"history": posts, "opportunities": opportunities}
+
+
 class Handler(BaseHTTPRequestHandler):
     def _authorized(self, header_name="X-Radar-Token"):
         expected = os.getenv("RADAR_ADMIN_TOKEN", "").strip()
@@ -165,8 +178,35 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         parsed = urlparse(self.path)
-        if parsed.path != "/account/import":
+        if parsed.path not in ("/account/import", "/generate"):
             return self._json(404, {"ok": False, "error": "not_found"})
+        if not self._authorized():
+            return self._json(401, {"ok": False, "error": "unauthorized"})
+        if parsed.path == "/generate":
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+                if length <= 0 or length > 1_000_000:
+                    return self._json(400, {"ok": False, "error": "body must be 1 byte to 1 MB"})
+                payload = json.loads(self.rfile.read(length).decode("utf-8"))
+                if not isinstance(payload, dict):
+                    return self._json(400, {"ok": False, "error": "JSON body must be an object"})
+                mode = str(payload.get("mode") or "text")
+                if mode not in ("text", "topic", "idea", "url", "today", "opportunity"):
+                    return self._json(400, {"ok": False, "error": "invalid mode"})
+                request = {
+                    "mode": mode,
+                    "text": str(payload.get("text") or payload.get("topic") or payload.get("idea") or "")[:5000],
+                    "source_url": str(payload.get("source_url") or payload.get("url") or "")[:2000],
+                    "opportunity_id": str(payload.get("opportunity_id") or "")[:200],
+                }
+                if mode in ("text", "topic", "idea", "url") and not (request["text"] or request["source_url"]):
+                    return self._json(400, {"ok": False, "error": "text/topic/idea/url is required"})
+                result = generate_post(request, generation_context(request))
+                return self._json(200 if result.get("ok") else 502, result)
+            except json.JSONDecodeError:
+                return self._json(400, {"ok": False, "error": "invalid_json"})
+            except Exception as exc:
+                return self._json(502, {"ok": False, "error": str(exc)})
         if not db_enabled():
             return self._json(503, {"ok": False, "error": "database_disabled"})
         if not self._authorized():
