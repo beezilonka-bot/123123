@@ -21,6 +21,8 @@ from radar.storage import (
     persist_account_posts,
     account_posts,
     summarize_account_performance,
+    account_topic_profile,
+    account_topic_relevance,
 )
 
 DEFAULT_FEEDS = [
@@ -59,6 +61,7 @@ def collect_and_persist():
     persisted = {"persisted_sources": 0, "persisted_items": 0, "persisted_events": 0}
     analyses = 0
     limit = max(0, int(os.getenv("RADAR_LLM_LIMIT", "5")))
+    profile = account_topic_profile(account_posts(1000)) if db_enabled() else {"top_terms": []}
     if db_enabled():
         sources = [{"id":sid, "name":name, "url":url, "type":"rss"}
                    for sid, name, url in configured_feeds()]
@@ -76,7 +79,9 @@ def collect_and_persist():
                 "audience": analysis.get("who_cares"),
                 "angle": angle,
                 "suggested_format": "single_post",
-                "priority": float(analysis.get("importance", 0)),
+                "priority": round(
+                    float(analysis.get("importance", 0)) * 0.75 +
+                    account_topic_relevance(event["title"], profile) * 25.0, 2),
             }
             record_opportunity(opportunity)
             analyses += 1
@@ -99,6 +104,7 @@ def radar_response():
         opportunities = []
         for i, event in enumerate(events[:10], 1):
             analysis = analyses.get(event["id"]) or analyze_event(event)
+            account_relevance = account_topic_relevance(event["title"], account_topic_profile(account_posts(1000)))
             opportunities.append({
                 "rank": i,
                 "event_id": event["id"],
@@ -109,7 +115,8 @@ def radar_response():
                 "angle": (analysis.get("suggested_angles") or
                           ["Explain what changed, why it matters, and what to watch next."])[0],
                 "suggested_format": "single_post",
-                "priority": float(event["total_score"] or 0),
+                "priority": round(float(event["total_score"] or 0) * 0.8 + account_relevance * 20.0, 2),
+                "account_relevance": round(account_relevance, 4),
                 "analysis": analysis,
             })
         return {
