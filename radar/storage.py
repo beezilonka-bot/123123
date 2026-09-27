@@ -276,6 +276,47 @@ def summarize_account_performance(posts: list[dict[str, Any]]) -> dict[str, Any]
     }
 
 
+def account_topic_profile(posts: list[dict[str, Any]], limit: int = 1000) -> dict[str, Any]:
+    """Build a lightweight topic profile from actual historical post text and metrics."""
+    posts = posts[:limit]
+    from collections import Counter
+    import re
+    stop = {"the","a","an","and","or","of","to","in","on","for","with","is","are",
+            "this","that","it","my","your","i","you","we","they","from","new"}
+    scores = Counter()
+    for post in posts:
+        text = str(post.get("text") or "").lower()
+        tokens = {t for t in re.findall(r"[a-z0-9]{3,}", text) if t not in stop}
+        if not tokens:
+            continue
+        impressions = float(post.get("impressions") or 0)
+        likes = float(post.get("likes") or 0)
+        replies = float(post.get("replies") or 0)
+        reposts = float(post.get("reposts") or 0)
+        bookmarks = float(post.get("bookmarks") or 0)
+        engagement = likes + replies + reposts + bookmarks
+        weight = 1.0 + min(4.0, engagement / max(impressions, 1.0) * 100.0)
+        for token in tokens:
+            scores[token] += weight
+    return {"post_count": len(posts), "top_terms": [
+        {"term": term, "score": round(score, 3)}
+        for term, score in scores.most_common(30)
+    ]}
+
+
+def account_topic_relevance(title: str, profile: dict[str, Any]) -> float:
+    """Return 0-1 lexical affinity with topics the account has actually posted about."""
+    import re
+    terms = {t for t in re.findall(r"[a-z0-9]{3,}", (title or "").lower())}
+    if not terms:
+        return 0.0
+    profile_terms = {x["term"]: float(x["score"]) for x in profile.get("top_terms", [])}
+    if not profile_terms:
+        return 0.0
+    matched = sum(profile_terms.get(term, 0.0) for term in terms)
+    total = sum(profile_terms.values())
+    return min(1.0, matched / max(total * 0.25, 1.0))
+
 def cleanup_duplicate_events() -> int:
     if not enabled():
         return 0
