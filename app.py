@@ -3,7 +3,7 @@ import os
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from radar.analyzer import analyze_event, llm_configured
+from radar.analyzer import analyze_event, llm_configured, localize_titles
 from radar.cluster import cluster_items, score_events
 from radar.collector import collect_feed
 from radar.x_import import parse_payload
@@ -104,18 +104,24 @@ def radar_response():
         stored = recent_opportunities(20)
         opportunities = []
         profile = account_topic_profile(account_posts(1000))
-        for i, event in enumerate(events[:10], 1):
+        top_events = events[:10]
+        title_zh = localize_titles([event["title"] for event in top_events])
+        for i, event in enumerate(top_events, 1):
             analysis = analyses.get(event["id"]) or {"event_id": event["id"], "importance": 0, "why_it_matters": None, "who_cares": "general", "suggested_angles": []}
             account_relevance = account_topic_relevance(event["title"], profile)
+            angle = (analysis.get("suggested_angles") or
+                      ["发生了什么，以及这次变化与此前有什么不同。"])[0]
+            if not any("\u4e00" <= ch <= "\u9fff" for ch in str(angle)):
+                angle = "发生了什么，以及这次变化与此前有什么不同。"
             opportunities.append({
                 "rank": i,
                 "event_id": event["id"],
-                "title": event["title"],
-                "why_now": f"score={float(event['total_score'] or 0):.2f}; "
-                           f"{event['item_count']} reports / {event['source_count']} sources",
+                "title": title_zh.get(event["title"], event["title"]),
+                "source_title": event["title"],
+                "why_now": f"趋势分数 {float(event['total_score'] or 0):.2f}；"
+                           f"目前聚合了 {event['item_count']} 条报道、{event['source_count']} 个来源。",
                 "audience": analysis.get("who_cares", "general"),
-                "angle": (analysis.get("suggested_angles") or
-                          ["Explain what changed, why it matters, and what to watch next."])[0],
+                "angle": angle,
                 "suggested_format": "single_post",
                 "priority": round(float(event["total_score"] or 0) * 0.8 + account_relevance * 20.0, 2),
                 "account_relevance": round(account_relevance, 4),

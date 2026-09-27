@@ -22,7 +22,7 @@ textarea{width:100%;min-height:112px;border:1px solid var(--line);background:#fa
 </style>
 </head>
 <body><div class="app">
-<header class="top"><div class="brand">123123</div><div id="status" class="status">连接正常</div></header>
+<header class="top"><div class="brand">123123</div><div id="status" class="status">连接检查中</div></header>
 <h1>今天发什么？</h1><p class="sub">从 Radar 找到值得写的机会，或直接输入你的想法。一键生成草稿，不会自动发布。</p>
 
 <section class="card">
@@ -78,5 +78,9 @@ async function generate(mode,extra={}){
 function generateOpportunity(id){generate('opportunity',{opportunity_id:id})}
 async function copyText(id){try{await navigator.clipboard.writeText($(id).textContent);toast('已复制')}catch{toast('复制失败，请长按文本复制')}}
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-loadRadar();
+async function checkHealth(){
+ try{const x=await api('/health');$('status').textContent=x.llm_configured?'模型 API 已连接':'模型 API 未配置';$('status').style.background=x.llm_configured?'#e8f5ee':'#fff0e8';$('status').style.color=x.llm_configured?'#19734a':'#9a4b12'}
+ catch{$('status').textContent='服务连接异常';$('status').style.background='#fff0e8';$('status').style.color='#9a4b12'}
+}
+checkHealth();loadRadar();
 </script></body></html>

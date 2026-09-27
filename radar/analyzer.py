@@ -10,6 +10,10 @@ import os
 import urllib.request
 from datetime import datetime, timezone
 from typing import Any
+import time
+
+_TITLE_ZH_CACHE: dict[str, tuple[float, str]] = {}
+_TITLE_ZH_TTL = 6 * 3600
 
 
 def _fallback(event: dict[str, Any]) -> dict[str, Any]:
@@ -124,6 +128,73 @@ def _call_llm(event: dict[str, Any]) -> dict[str, Any] | None:
 
 def llm_configured() -> bool:
     return bool(_llm_config()[0])
+
+
+def localize_titles(titles: list[str]) -> dict[str, str]:
+    """Batch-localize Radar titles to Simplified Chinese and cache for six hours."""
+    clean = [str(x).strip() for x in titles if str(x).strip()]
+    now = time.time()
+    result: dict[str, str] = {}
+    cache_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".radar_title_cache.json")
+    try:
+        with open(cache_path, "r", encoding="utf-8") as handle:
+            for original, translated in json.load(handle).items():
+                if original and translated:
+                    _TITLE_ZH_CACHE[str(original)] = (now, str(translated))
+    except (OSError, ValueError, TypeError):
+        pass
+    missing: list[str] = []
+    for title in clean:
+        cached = _TITLE_ZH_CACHE.get(title)
+        if cached and now - cached[0] < _TITLE_ZH_TTL:
+            result[title] = cached[1]
+        elif title not in missing:
+            missing.append(title)
+    if not missing:
+        return result
+    key, base, model = _llm_config()
+    if not key:
+        return result
+    payload = {
+        "model": model,
+        "temperature": 0.1,
+        "messages": [
+            {"role": "system", "content": "Return valid JSON only."},
+            {"role": "user", "content": (
+                "把下面的新闻标题翻译成自然、简洁的简体中文。"
+                "专有名词、公司、人名可以保留英文；不要添加原标题没有的信息。"
+                "返回 JSON 对象，key 必须与原英文标题完全一致，value 是中文标题。\n\n"
+                + json.dumps(missing, ensure_ascii=False)
+            )},
+        ],
+    }
+    req = urllib.request.Request(
+        f"{base}/chat/completions",
+        data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+        headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as response:
+            body = json.loads(response.read().decode("utf-8"))
+        raw = body["choices"][0]["message"]["content"].strip()
+        raw = raw.replace(chr(96) * 3 + "json", "").replace(chr(96) * 3, "").strip()
+        parsed = json.loads(raw)
+        if isinstance(parsed, list):
+            parsed = {str(item.get("original")): str(item.get("zh")) for item in parsed if isinstance(item, dict)}
+        for original in missing:
+            translated = str(parsed.get(original, "")).strip()
+            if translated:
+                _TITLE_ZH_CACHE[original] = (now, translated)
+                result[original] = translated
+        try:
+            with open(cache_path, "w", encoding="utf-8") as handle:
+                json.dump({k: v[1] for k, v in _TITLE_ZH_CACHE.items()}, handle, ensure_ascii=False, indent=2)
+        except OSError:
+            pass
+    except Exception:
+        pass
+    return result
 
 
 def analyze_event(event: dict[str, Any]) -> dict[str, Any]:
