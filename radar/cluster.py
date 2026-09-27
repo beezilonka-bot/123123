@@ -7,6 +7,7 @@ the deployed service and be replaced later.
 from __future__ import annotations
 
 import re
+import hashlib
 from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Any
@@ -46,10 +47,7 @@ def cluster_items(items: list[dict[str, Any]], threshold: float = 0.45) -> list[
             if score >= threshold and score > best_score:
                 best, best_score = cluster, score
         if best is None:
-            clusters.append({
-                "id": f"event-{len(clusters) + 1}",
-                "items": [item],
-            })
+            clusters.append({"items": [item]})
         else:
             best["items"].append(item)
 
@@ -60,8 +58,10 @@ def cluster_items(items: list[dict[str, Any]], threshold: float = 0.45) -> list[
         dated.sort(key=lambda m: m["published_at"])
         representative = max(members, key=lambda m: len(m.get("summary") or ""))
         sources = {m.get("source_id") for m in members if m.get("source_id")}
+        rep_tokens = sorted(title_tokens(representative.get("title", "")))
+        cluster_key = hashlib.sha256(" ".join(rep_tokens).encode("utf-8")).hexdigest()[:16]
         events.append({
-            "id": cluster["id"],
+            "id": f"event-{cluster_key}",
             "representative_item_id": representative.get("id"),
             "title": representative.get("title"),
             "summary": representative.get("summary"),
@@ -70,6 +70,7 @@ def cluster_items(items: list[dict[str, Any]], threshold: float = 0.45) -> list[
             "item_count": len(members),
             "source_count": len(sources),
             "items": members,
+            "cluster_key": cluster_key,
         })
     return events
 
