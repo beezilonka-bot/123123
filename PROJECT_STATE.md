@@ -1,10 +1,10 @@
 # Project State
 
 ## 当前版本
-v0.5.3
+v0.5.4
 
 ## 当前阶段
-STAGE-005D — Radar 实时层与后台层解耦
+STAGE-005E — 服务器鉴权与运行验证
 
 ## 已完成
 - 创建新公开仓库 123123
@@ -68,10 +68,10 @@ STAGE-005D — Radar 实时层与后台层解耦
 - Radar 内容机会优先级开始同时考虑事件趋势分数与账号历史主题相关度。
 - 不模拟 X 官方推荐权重；这是项目自己的内容机会排序信号。
 - 服务器已拉取最新代码并通过 Python 编译及 health 验证。
-- 新代码在独立 18093 端口启动验证；health 正常。\n- `/radar` 不再因缺失历史分析而同步调用 LLM；LLM 分析由 `/collect` 后台采集流程负责。\n- `/account/import` 与 `/collect` 已增加 `X-Radar-Token` 鉴权，token 仅从服务器环境变量读取。
+- 新代码在独立 18093 端口启动验证；health 正常。\n- 服务器私有 `.radar.env` 已配置随机 `RADAR_ADMIN_TOKEN` 与 PostgreSQL `DATABASE_URL`，权限为 600，不进入 Git。\n- 正式 18092 已使用私有环境配置启动。\n- `/radar` 不再因缺失历史分析而同步调用 LLM；LLM 分析由 `/collect` 后台采集流程负责。\n- `/account/import` 与 `/collect` 已增加 `X-Radar-Token` 鉴权，token 仅从服务器环境变量读取。\n- 实测无 token 调用 `/collect` 返回 401；`/radar` 正常返回 30 events / 10 opportunities；health 显示 database_enabled=true、llm_configured=true。
 
 ## 下一步
-1. 在服务器配置 `RADAR_ADMIN_TOKEN` 并验证受保护接口。
+1. 将正式运行命令固化为 systemd/supervisor 或现有服务器启动脚本，避免手工重启。
 2. 增加导入接口鉴权/内部访问限制。
 2. 根据实际拿到的官方导出文件样本，补充字段映射，不预设不存在的官方字段。
 3. 将账号表现特征接入 Radar 的内容机会排序。
