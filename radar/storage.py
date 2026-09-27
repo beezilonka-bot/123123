@@ -76,7 +76,7 @@ def persist_run(sources: list[dict[str, Any]], items: list[dict[str, Any]],
                     """INSERT INTO items(id,source_id,url,canonical_url,title,summary,content,author,
                     published_at,fetched_at,language,raw_hash)
                     VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                    ON CONFLICT(id) DO UPDATE SET fetched_at=EXCLUDED.fetched_at,summary=EXCLUDED.summary""",
+                    ON CONFLICT(canonical_url) DO UPDATE SET fetched_at=EXCLUDED.fetched_at,summary=EXCLUDED.summary,title=EXCLUDED.title,source_id=EXCLUDED.source_id""",
                     (item["id"],item["source_id"],item["url"],item["canonical_url"],item["title"],
                      item.get("summary"),item.get("content"),item.get("author"),item.get("published_at"),
                      item["fetched_at"],item.get("language"),item["raw_hash"]))
