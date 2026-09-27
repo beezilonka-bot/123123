@@ -115,6 +115,10 @@ def _call_llm(event: dict[str, Any]) -> dict[str, Any] | None:
         return None
 
 
+def llm_configured() -> bool:
+    return bool(_llm_config()[0])
+
+
 def analyze_event(event: dict[str, Any]) -> dict[str, Any]:
     """Use LLM when configured; otherwise return a safe deterministic result."""
     return _call_llm(event) or _fallback(event)
