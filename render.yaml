@@ -15,6 +15,22 @@ services:
           name: 123123-radar-db
           property: connectionString
 
+  - type: cron
+    name: 123123-radar-collector
+    runtime: python
+    plan: free
+    region: oregon
+    repo: https://github.com/beezilonka-bot/123123
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m radar.run
+    schedule: "*/30 * * * *"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: 123123-radar-db
+          property: connectionString
+
 databases:
   - name: 123123-radar-db
     plan: free
