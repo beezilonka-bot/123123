@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: 123123-radar
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    autoDeploy: true
