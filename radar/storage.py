@@ -180,6 +180,27 @@ def record_opportunity(opportunity: dict[str, Any]) -> None:
         conn.commit()
 
 
+def cleanup_duplicate_events() -> int:
+    if not enabled():
+        return 0
+    init_db()
+    removed = 0
+    with _connect() as conn, conn.cursor() as cur:
+        cur.execute("""SELECT cluster_key,array_agg(id ORDER BY latest_seen_at DESC) ids
+                       FROM events WHERE cluster_key IS NOT NULL
+                       GROUP BY cluster_key HAVING COUNT(*) > 1""")
+        for key, ids in cur.fetchall():
+            keep = ids[0]
+            for old in ids[1:]:
+                cur.execute("UPDATE content_opportunities SET event_id=%s WHERE event_id=%s", (keep, old))
+                cur.execute("UPDATE event_analyses SET event_id=%s WHERE event_id=%s", (keep, old))
+                cur.execute("DELETE FROM trend_signals WHERE event_id=%s", (old,))
+                cur.execute("DELETE FROM events WHERE id=%s", (old,))
+                removed += 1
+        conn.commit()
+    return removed
+
+
 def recent_opportunities(limit: int = 20) -> list[dict[str, Any]]:
     if not enabled():
         return []
