@@ -139,6 +139,29 @@ def recent_analyses(limit: int = 10) -> dict[str, dict[str, Any]]:
         cols=[d.name for d in cur.description]
         return {str(row[0]):dict(zip(cols,row)) for row in rows}
 
+def velocity_history() -> dict[str, dict[str, float]]:
+    if not enabled():
+        return {}
+    init_db()
+    with _connect() as conn, conn.cursor() as cur:
+        cur.execute("""SELECT cluster_key,item_count,latest_seen_at FROM events
+                       WHERE cluster_key IS NOT NULL AND latest_seen_at IS NOT NULL
+                       ORDER BY latest_seen_at""")
+        rows=cur.fetchall()
+    grouped: dict[str, list[tuple[float, float]]] = {}
+    for key, count, latest in rows:
+        ts = latest.timestamp() if hasattr(latest, "timestamp") else 0.0
+        grouped.setdefault(key, []).append((ts, float(count or 0)))
+    out = {}
+    for key, values in grouped.items():
+        if len(values) >= 2:
+            first_ts, first_count = values[0]
+            last_ts, last_count = values[-1]
+            elapsed=max((last_ts-first_ts)/3600.0, 0.25)
+            out[key]={"previous_item_count":first_count,"elapsed_hours":elapsed}
+    return out
+
+
 def record_opportunity(opportunity: dict[str, Any]) -> None:
     if not enabled():
         return
