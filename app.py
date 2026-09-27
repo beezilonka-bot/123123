@@ -149,7 +149,13 @@ def radar_response():
 
 
 class Handler(BaseHTTPRequestHandler):
-    def _authorized(self, header_name="X-Radar-Token"):\n        expected = os.getenv("RADAR_ADMIN_TOKEN", "").strip()\n        if not expected:\n            return False\n        return self.headers.get(header_name, "") == expected\n\n    def _json(self, status, payload):
+    def _authorized(self, header_name="X-Radar-Token"):\n        expected = os.getenv("RADAR_ADMIN_TOKEN", "").strip()\n        if not expected:\n            return False\n        return self.headers.get(header_name, "") == expected\n\n    def _authorized(self, header_name="X-Radar-Token"):
+        expected = os.getenv("RADAR_ADMIN_TOKEN", "").strip()
+        if not expected:
+            return False
+        return self.headers.get(header_name, "") == expected
+
+    def _json(self, status, payload):
         body = json.dumps(payload, ensure_ascii=False, default=str).encode()
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -163,6 +169,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(404, {"ok": False, "error": "not_found"})
         if not db_enabled():
             return self._json(503, {"ok": False, "error": "database_disabled"})
+        if not self._authorized():
+            return self._json(401, {"ok": False, "error": "unauthorized"})
         try:
             length = int(self.headers.get("Content-Length", "0"))
             if length <= 0 or length > 5_000_000:
@@ -196,6 +204,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(200, {"ok": True, "count": len(items),
                                         "collection_errors": errors, "items": items[:40]})
             if path == "/collect":
+                if not self._authorized():
+                    return self._json(401, {"ok": False, "error": "unauthorized"})
                 return self._json(200, collect_and_persist())
             if path == "/account/performance":
                 posts = account_posts(1000)
