@@ -149,13 +149,7 @@ def radar_response():
 
 
 class Handler(BaseHTTPRequestHandler):
-    def _authorized(self, header_name="X-Radar-Token"):\n        expected = os.getenv("RADAR_ADMIN_TOKEN", "").strip()\n        if not expected:\n            return False\n        return self.headers.get(header_name, "") == expected\n\n    def _authorized(self, header_name="X-Radar-Token"):
-        expected = os.getenv("RADAR_ADMIN_TOKEN", "").strip()
-        if not expected:
-            return False
-        return self.headers.get(header_name, "") == expected
-
-    def _json(self, status, payload):
+    def _authorized(self, header_name="X-Radar-Token"):\n        expected = os.getenv("RADAR_ADMIN_TOKEN", "").strip()\n        if not expected:\n            return False\n        return self.headers.get(header_name, "") == expected\n\n    def _json(self, status, payload):
         body = json.dumps(payload, ensure_ascii=False, default=str).encode()
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
