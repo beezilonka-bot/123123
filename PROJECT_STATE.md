@@ -1,7 +1,7 @@
 # Project State
 
 ## 当前版本
-v0.1.3
+v0.2.0
 
 ## 当前阶段
 STAGE-002 — 信息雷达最小数据模型与 RSS Collector
@@ -20,14 +20,16 @@ STAGE-002 — 信息雷达最小数据模型与 RSS Collector
 - docs/OPEN_SOURCE_MAP.md 已写入 main
 - 完成 STAGE-002A：最小数据模型设计
 - 完成 STAGE-002B：RSS/Atom collector 初版与 canonical URL 单元测试
+- 建立最小可部署 Radar Web Service（/health、/feed）
+- 建立 Render 自动部署入口
 
 ## 当前 Commit
 见本文件所在最新 commit。
 
 ## 下一步
-STAGE-002C — 本地可运行验证与真实 Feed 测试
+STAGE-002C — 部署环境集成验证
 
-1. 安装 feedparser 依赖并运行单元测试。
-2. 用公开 RSS/Atom Feed 做一次真实采集验证。
-3. 修复解析边界问题。
-4. 验证后提交并进入 Event Cluster。
+1. 等待 Render 部署完成。
+2. 在部署环境验证 /health。
+3. 在部署环境验证 /feed 真实 RSS 采集。
+4. 根据真实运行结果修复问题，然后直接进入 Event Cluster + Trend Signal 最小闭环。
