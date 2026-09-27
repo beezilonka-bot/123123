@@ -89,7 +89,8 @@ def _age_hours(value: str | None, now: datetime) -> float:
 
 
 def score_events(events: list[dict[str, Any]], topics: list[str] | None = None,
-                 now: datetime | None = None) -> list[dict[str, Any]]:
+                 now: datetime | None = None,
+                 history: dict[str, dict[str, float]] | None = None) -> list[dict[str, Any]]:
     """Return explainable 0-100 trend scores, sorted descending."""
     now = now or datetime.now(timezone.utc)
     topic_tokens = set().union(*(title_tokens(t) for t in (topics or [])))
@@ -99,6 +100,11 @@ def score_events(events: list[dict[str, Any]], topics: list[str] | None = None,
         freshness = max(0.0, min(1.0, 1.0 - age / 48.0))
         source_signal = min(1.0, event.get("source_count", 0) / 4.0)
         volume_signal = min(1.0, event.get("item_count", 0) / 5.0)
+        hist = (history or {}).get(event.get("cluster_key", ""), {})
+        previous = hist.get("previous_item_count", 0.0)
+        elapsed = max(hist.get("elapsed_hours", 1.0), 0.25)
+        velocity = max(0.0, (event.get("item_count", 0) - previous) / elapsed)
+        velocity_signal = min(1.0, velocity / 3.0)
         title_signal = title_tokens(event.get("title", ""))
         relevance = (
             len(title_signal & topic_tokens) / len(topic_tokens)
@@ -108,7 +114,8 @@ def score_events(events: list[dict[str, Any]], topics: list[str] | None = None,
         total = 100 * (
             0.35 * freshness +
             0.25 * source_signal +
-            0.15 * volume_signal +
+            0.10 * volume_signal +
+            0.05 * velocity_signal +
             0.15 * novelty +
             0.10 * relevance
         )
@@ -116,7 +123,7 @@ def score_events(events: list[dict[str, Any]], topics: list[str] | None = None,
             **event,
             "trend_signal": {
                 "freshness": round(freshness, 4),
-                "velocity": round(volume_signal, 4),
+                "velocity": round(velocity_signal, 4),
                 "source_count": event.get("source_count", 0),
                 "item_count": event.get("item_count", 0),
                 "novelty": round(novelty, 4),
