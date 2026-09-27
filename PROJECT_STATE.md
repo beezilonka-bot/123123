@@ -1,7 +1,7 @@
 # Project State
 
 ## 当前版本
-v0.1.1
+v0.1.2
 
 ## 当前阶段
 STAGE-002 — 信息雷达最小数据模型与 RSS Collector
@@ -18,16 +18,16 @@ STAGE-002 — 信息雷达最小数据模型与 RSS Collector
 - GitHub 仓库存在且为 Public
 - 默认分支：main
 - docs/OPEN_SOURCE_MAP.md 已写入 main
-- 本阶段暂不写业务代码
+- 完成 STAGE-002A：最小数据模型设计
 
 ## 当前 Commit
 见本文件所在最新 commit。
 
 ## 下一步
-STAGE-002A — 设计最小数据模型
+STAGE-002B — RSS Collector 最小实现
 
-1. 逐项读取核心仓库 README、LICENSE、代码结构。
-2. 核实许可证与维护状态。
-3. 区分可直接集成与仅适合架构借鉴的项目。
-4. 选出 Phase 2 的最小技术组合。
-5. 再开始写信息雷达业务代码。
+1. 定义 RSS/Atom 标准化输入输出。
+2. 实现单 feed 抓取与解析。
+3. 实现 canonical URL 与 raw hash。
+4. 加入最小测试数据集和重复项测试。
+5. 验证后立即提交。
