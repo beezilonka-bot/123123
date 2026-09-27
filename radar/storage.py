@@ -32,6 +32,13 @@ CREATE TABLE IF NOT EXISTS trend_signals (
     total_score DOUBLE PRECISION NOT NULL, calculated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_trend_event_time ON trend_signals(event_id, calculated_at DESC);
+CREATE TABLE IF NOT EXISTS event_analyses (
+    id BIGSERIAL PRIMARY KEY, event_id TEXT NOT NULL REFERENCES events(id),
+    importance DOUBLE PRECISION NOT NULL, why_it_matters TEXT,
+    who_cares TEXT, key_facts JSONB, uncertainty TEXT, tags JSONB,
+    suggested_angles JSONB, model TEXT, analyzed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_analysis_event_time ON event_analyses(event_id, analyzed_at DESC);
 CREATE TABLE IF NOT EXISTS content_opportunities (
     id TEXT PRIMARY KEY, event_id TEXT NOT NULL REFERENCES events(id),
     title TEXT NOT NULL, why_now TEXT, audience TEXT, angle TEXT,
@@ -76,7 +83,8 @@ def persist_run(sources: list[dict[str, Any]], items: list[dict[str, Any]],
                     """INSERT INTO items(id,source_id,url,canonical_url,title,summary,content,author,
                     published_at,fetched_at,language,raw_hash)
                     VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                    ON CONFLICT(canonical_url) DO UPDATE SET fetched_at=EXCLUDED.fetched_at,summary=EXCLUDED.summary,title=EXCLUDED.title,source_id=EXCLUDED.source_id""",
+                    ON CONFLICT(canonical_url) DO UPDATE SET fetched_at=EXCLUDED.fetched_at,
+                    summary=EXCLUDED.summary,title=EXCLUDED.title,source_id=EXCLUDED.source_id""",
                     (item["id"],item["source_id"],item["url"],item["canonical_url"],item["title"],
                      item.get("summary"),item.get("content"),item.get("author"),item.get("published_at"),
                      item["fetched_at"],item.get("language"),item["raw_hash"]))
@@ -101,6 +109,34 @@ def persist_run(sources: list[dict[str, Any]], items: list[dict[str, Any]],
                          signal["item_count"],signal["novelty"],signal["relevance"],signal["total_score"]))
         conn.commit()
     return {"persisted_sources":len(sources),"persisted_items":len(items),"persisted_events":len(events)}
+
+def persist_analysis(analysis: dict[str, Any]) -> None:
+    if not enabled():
+        return
+    init_db()
+    with _connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            """INSERT INTO event_analyses(event_id,importance,why_it_matters,who_cares,
+            key_facts,uncertainty,tags,suggested_angles,model)
+            VALUES(%s,%s,%s,%s,%s::jsonb,%s,%s::jsonb,%s::jsonb,%s)""",
+            (analysis["event_id"],analysis.get("importance",0),analysis.get("why_it_matters"),
+             analysis.get("who_cares"),json.dumps(analysis.get("key_facts",[]),ensure_ascii=False),
+             analysis.get("uncertainty"),json.dumps(analysis.get("tags",[]),ensure_ascii=False),
+             json.dumps(analysis.get("suggested_angles",[]),ensure_ascii=False),analysis.get("model")))
+        conn.commit()
+
+def recent_analyses(limit: int = 10) -> dict[str, dict[str, Any]]:
+    if not enabled():
+        return {}
+    init_db()
+    with _connect() as conn, conn.cursor() as cur:
+        cur.execute("""SELECT DISTINCT ON (event_id) event_id,importance,why_it_matters,
+                       who_cares,key_facts,uncertainty,tags,suggested_angles,model,analyzed_at
+                       FROM event_analyses ORDER BY event_id,analyzed_at DESC""")
+        rows=cur.fetchall()
+        rows=sorted(rows,key=lambda x: float(x[1] or 0),reverse=True)[:limit]
+        cols=[d.name for d in cur.description]
+        return {str(row[0]):dict(zip(cols,row)) for row in rows}
 
 def recent_events(limit: int = 30) -> list[dict[str, Any]]:
     if not enabled():
