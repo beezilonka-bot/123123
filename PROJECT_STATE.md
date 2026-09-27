@@ -1,7 +1,7 @@
 # Project State
 
 ## 当前版本
-v0.1.2
+v0.1.3
 
 ## 当前阶段
 STAGE-002 — 信息雷达最小数据模型与 RSS Collector
@@ -19,15 +19,15 @@ STAGE-002 — 信息雷达最小数据模型与 RSS Collector
 - 默认分支：main
 - docs/OPEN_SOURCE_MAP.md 已写入 main
 - 完成 STAGE-002A：最小数据模型设计
+- 完成 STAGE-002B：RSS/Atom collector 初版与 canonical URL 单元测试
 
 ## 当前 Commit
 见本文件所在最新 commit。
 
 ## 下一步
-STAGE-002B — RSS Collector 最小实现
+STAGE-002C — 本地可运行验证与真实 Feed 测试
 
-1. 定义 RSS/Atom 标准化输入输出。
-2. 实现单 feed 抓取与解析。
-3. 实现 canonical URL 与 raw hash。
-4. 加入最小测试数据集和重复项测试。
-5. 验证后立即提交。
+1. 安装 feedparser 依赖并运行单元测试。
+2. 用公开 RSS/Atom Feed 做一次真实采集验证。
+3. 修复解析边界问题。
+4. 验证后提交并进入 Event Cluster。
