@@ -48,7 +48,7 @@ def _llm_config() -> tuple[str | None, str, str]:
         except OSError:
             key = None
     base = (os.getenv("OPENAI_BASE_URL") or os.getenv("LLM_BASE_URL") or "https://tierflow.cn/v1").rstrip("/")
-    model = os.getenv("OPENAI_MODEL") or os.getenv("LLM_MODEL") or "Qwen3.8-Flash"
+    model = os.getenv("OPENAI_MODEL") or os.getenv("LLM_MODEL") or "GLM-5.3-Flash"
     return key, base, model
 
 
