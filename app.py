@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 
 from radar.cluster import cluster_items, score_events
 from radar.collector import collect_feed
+from radar.storage import enabled as db_enabled, persist_run
 
 DEFAULT_FEEDS = [
     ("bbc-news", "BBC News", "https://feeds.bbci.co.uk/news/rss.xml"),
@@ -40,6 +41,15 @@ def build_radar():
     items, errors = collect_all_feeds()
     events = cluster_items(items)
     ranked = score_events(events, topics=topics)
+
+    persisted = {"persisted_sources": 0, "persisted_items": 0, "persisted_events": 0}
+    if db_enabled() and not errors:
+        sources = [
+            {"id": source_id, "name": source_name, "url": url, "type": "rss"}
+            for source_id, source_name, url in configured_feeds()
+        ]
+        persisted = persist_run(sources, items, ranked)
+
     opportunities = []
     for rank, event in enumerate(ranked[:10], start=1):
         opportunities.append({
@@ -60,6 +70,8 @@ def build_radar():
         "source_count": len(configured_feeds()),
         "item_count": len(items),
         "event_count": len(ranked),
+        "database_enabled": db_enabled(),
+        "persistence": persisted,
         "collection_errors": errors,
         "opportunities": opportunities,
     }
@@ -77,7 +89,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = urlparse(self.path).path
         if path == "/health":
-            return self._json(200, {"ok": True, "service": "123123-radar"})
+            return self._json(200, {"ok": True, "service": "123123-radar", "database_enabled": db_enabled()})
         if path == "/feed":
             try:
                 items, errors = collect_all_feeds()
