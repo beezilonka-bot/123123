@@ -203,13 +203,14 @@ def persist_account_posts(posts: list[dict[str, Any]]) -> int:
             (id,external_id,text,published_at,impressions,likes,replies,reposts,bookmarks,quotes,profile_visits,source)
             VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             ON CONFLICT(id) DO UPDATE SET text=EXCLUDED.text,published_at=EXCLUDED.published_at,
-            impressions=EXCLUDED.impressions,likes=EXCLUDED.likes,replies=EXCLUDED.replies,
-            reposts=EXCLUDED.reposts,bookmarks=EXCLUDED.bookmarks,quotes=EXCLUDED.quotes,
-            profile_visits=EXCLUDED.profile_visits""",
+            external_id=EXCLUDED.external_id,impressions=EXCLUDED.impressions,
+            likes=EXCLUDED.likes,replies=EXCLUDED.replies,reposts=EXCLUDED.reposts,
+            bookmarks=EXCLUDED.bookmarks,quotes=EXCLUDED.quotes,
+            profile_visits=EXCLUDED.profile_visits,source=EXCLUDED.source""",
             (post["id"],post.get("external_id"),post["text"],post.get("published_at"),
-             post.get("impressions",0),post.get("likes",0),post.get("replies",0),
-             post.get("reposts",0),post.get("bookmarks",0),post.get("quotes",0),
-             post.get("profile_visits",0),post.get("source","x")))
+             post.get("impressions"),post.get("likes"),post.get("replies"),
+             post.get("reposts"),post.get("bookmarks"),post.get("quotes"),
+             post.get("profile_visits"),post.get("source","x"))) 
     conn.commit()
     return len(posts)
 
