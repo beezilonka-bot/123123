@@ -226,6 +226,33 @@ def account_posts(limit: int = 100) -> list[dict[str, Any]]:
         return [dict(zip(cols,row)) for row in cur.fetchall()]
 
 
+from statistics import median
+
+
+def summarize_account_performance(posts: list[dict[str, Any]]) -> dict[str, Any]:
+    """Summarize only metrics actually supplied by the account data."""
+    if not posts:
+        return {"post_count": 0, "medians": {}, "top_posts": []}
+    def rates(post):
+        imp = max(float(post.get("impressions") or 0), 0.0) or 1.0
+        return {
+            "engagement_rate": sum(float(post.get(k) or 0) for k in
+                                   ("likes", "replies", "reposts", "bookmarks", "quotes")) / imp,
+            "like_rate": float(post.get("likes") or 0) / imp,
+            "reply_rate": float(post.get("replies") or 0) / imp,
+            "repost_rate": float(post.get("reposts") or 0) / imp,
+            "bookmark_rate": float(post.get("bookmarks") or 0) / imp,
+            "quote_rate": float(post.get("quotes") or 0) / imp,
+        }
+    rows=[(p,rates(p)) for p in posts]
+    keys=("engagement_rate","like_rate","reply_rate","repost_rate","bookmark_rate","quote_rate")
+    medians={k:median(r[k] for _,r in rows) for k in keys}
+    top=sorted(rows,key=lambda x:x[1]["engagement_rate"],reverse=True)[:10]
+    return {"post_count":len(posts),"medians":medians,
+            "top_posts":[{"id":p["id"],"text":p["text"],"impressions":p.get("impressions",0),"features":r}
+                         for p,r in top]}
+
+
 def cleanup_duplicate_events() -> int:
     if not enabled():
         return 0
