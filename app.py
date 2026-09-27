@@ -104,7 +104,7 @@ def radar_response():
         opportunities = []
         profile = account_topic_profile(account_posts(1000))
         for i, event in enumerate(events[:10], 1):
-            analysis = analyses.get(event["id"]) or analyze_event(event)
+            analysis = analyses.get(event["id"]) or {"event_id": event["id"], "importance": 0, "why_it_matters": None, "who_cares": "general", "suggested_angles": []}
             account_relevance = account_topic_relevance(event["title"], profile)
             opportunities.append({
                 "rank": i,
@@ -149,7 +149,7 @@ def radar_response():
 
 
 class Handler(BaseHTTPRequestHandler):
-    def _json(self, status, payload):
+    def _authorized(self, header_name="X-Radar-Token"):\n        expected = os.getenv("RADAR_ADMIN_TOKEN", "").strip()\n        if not expected:\n            return False\n        return self.headers.get(header_name, "") == expected\n\n    def _json(self, status, payload):
         body = json.dumps(payload, ensure_ascii=False, default=str).encode()
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
