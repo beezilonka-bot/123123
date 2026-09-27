@@ -1,11 +1,13 @@
 import json
 import os
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 from radar.analyzer import analyze_event, llm_configured
 from radar.cluster import cluster_items, score_events
 from radar.collector import collect_feed
+from radar.x_import import parse_payload
+
 from radar.storage import (
     enabled as db_enabled,
     persist_analysis,
@@ -16,6 +18,9 @@ from radar.storage import (
     record_opportunity,
     velocity_history,
     cleanup_duplicate_events,
+    persist_account_posts,
+    account_posts,
+    summarize_account_performance,
 )
 
 DEFAULT_FEEDS = [
@@ -144,6 +149,33 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def do_POST(self):
+        parsed = urlparse(self.path)
+        if parsed.path != "/account/import":
+            return self._json(404, {"ok": False, "error": "not_found"})
+        if not db_enabled():
+            return self._json(503, {"ok": False, "error": "database_disabled"})
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+            if length <= 0 or length > 5_000_000:
+                return self._json(400, {"ok": False, "error": "body must be 1 byte to 5 MB"})
+            body = self.rfile.read(length)
+            query = parse_qs(parsed.query)
+            content_type = self.headers.get("Content-Type", "").lower()
+            fmt = (query.get("format") or [""])[0].lower()
+            if not fmt:
+                fmt = "json" if "json" in content_type else "csv"
+            posts = parse_payload(body, fmt)
+            count = persist_account_posts(posts)
+            return self._json(200, {
+                "ok": True,
+                "format": fmt,
+                "imported": count,
+                "message": "Imported user-provided history; no X API was used.",
+            })
+        except Exception as exc:
+            return self._json(400, {"ok": False, "error": str(exc)})
+
     def do_GET(self):
         path = urlparse(self.path).path
         try:
@@ -157,6 +189,9 @@ class Handler(BaseHTTPRequestHandler):
                                         "collection_errors": errors, "items": items[:40]})
             if path == "/collect":
                 return self._json(200, collect_and_persist())
+            if path == "/account/performance":
+                posts = account_posts(1000)
+                return self._json(200, {"ok": True, "performance": summarize_account_performance(posts)})
             if path == "/radar":
                 return self._json(200, radar_response())
             return self._json(404, {"ok": False, "error": "not_found"})
