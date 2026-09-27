@@ -12,6 +12,9 @@ from radar.storage import (
     persist_run,
     recent_analyses,
     recent_events,
+    recent_opportunities,
+    record_opportunity,
+    velocity_history,
 )
 
 DEFAULT_FEEDS = [
@@ -41,7 +44,8 @@ def collect_all_feeds():
 def collect_and_persist():
     topics = [x.strip() for x in os.getenv("RADAR_TOPICS", "").split(",") if x.strip()]
     items, errors = collect_all_feeds()
-    ranked = score_events(cluster_items(items), topics=topics)
+    history = velocity_history() if db_enabled() else {}
+    ranked = score_events(cluster_items(items), topics=topics, history=history)
     persisted = {"persisted_sources": 0, "persisted_items": 0, "persisted_events": 0}
     analyses = 0
     limit = max(0, int(os.getenv("RADAR_LLM_LIMIT", "5")))
@@ -52,6 +56,19 @@ def collect_and_persist():
         for event in ranked[:limit]:
             analysis = analyze_event(event)
             persist_analysis(analysis)
+            angles = analysis.get("suggested_angles") or []
+            angle = angles[0] if angles else "解释发生了什么、为什么重要，以及接下来观察什么。"
+            opportunity = {
+                "id": f"op-{event['id']}",
+                "event_id": event["id"],
+                "title": event["title"],
+                "why_now": analysis.get("why_it_matters"),
+                "audience": analysis.get("who_cares"),
+                "angle": angle,
+                "suggested_format": "single_post",
+                "priority": float(analysis.get("importance", 0)),
+            }
+            record_opportunity(opportunity)
             analyses += 1
     return {
         "ok": not errors,
@@ -67,7 +84,8 @@ def collect_and_persist():
 def radar_response():
     if db_enabled():
         events = recent_events(30)
-        analyses = recent_analyses(10)
+        analyses = recent_analyses(20)
+        stored = recent_opportunities(20)
         opportunities = []
         for i, event in enumerate(events[:10], 1):
             analysis = analyses.get(event["id"]) or analyze_event(event)
@@ -87,6 +105,7 @@ def radar_response():
         return {
             "ok": True,
             "database_enabled": True,
+            "stored_opportunities": stored,
             "llm_configured": llm_configured(),
             "source_count": len(configured_feeds()),
             "event_count": len(events),
