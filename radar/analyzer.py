@@ -40,8 +40,15 @@ def _fallback(event: dict[str, Any]) -> dict[str, Any]:
 
 def _llm_config() -> tuple[str | None, str, str]:
     key = os.getenv("OPENAI_API_KEY") or os.getenv("LLM_API_KEY")
-    base = (os.getenv("OPENAI_BASE_URL") or os.getenv("LLM_BASE_URL") or "https://api.openai.com/v1").rstrip("/")
-    model = os.getenv("OPENAI_MODEL") or os.getenv("LLM_MODEL") or "gpt-4o-mini"
+    if not key:
+        key_file = os.getenv("LLM_API_KEY_FILE", "/tmp/Popularity-Generator/.runtime/tierflow.key")
+        try:
+            with open(key_file, "r", encoding="utf-8") as handle:
+                key = handle.read().strip() or None
+        except OSError:
+            key = None
+    base = (os.getenv("OPENAI_BASE_URL") or os.getenv("LLM_BASE_URL") or "https://tierflow.cn/v1").rstrip("/")
+    model = os.getenv("OPENAI_MODEL") or os.getenv("LLM_MODEL") or "Qwen3.8-Flash"
     return key, base, model
 
 
