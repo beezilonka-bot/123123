@@ -1,32 +1,82 @@
 <!doctype html>
-<html lang="zh-CN"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>123123 · 一键推文</title>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f5f5f3">
+<title>123123 · 推文工作台</title>
 <style>
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;max-width:720px;margin:auto;padding:18px;background:#f6f6f6;color:#111}
-main{background:#fff;border-radius:16px;padding:18px;box-shadow:0 2px 14px #0001}
-textarea,input,button{box-sizing:border-box;width:100%;font:inherit;border:1px solid #ddd;border-radius:10px;padding:12px}
-textarea{min-height:130px;resize:vertical}button{margin-top:10px;background:#111;color:#fff;border:0;font-weight:600}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.card{margin-top:14px;padding:14px;background:#f7f7f7;border-radius:12px;white-space:pre-wrap}.muted{color:#666;font-size:13px}
+:root{--bg:#f5f5f3;--card:#fff;--text:#171717;--muted:#777;--line:#e5e5e2;--accent:#111;--soft:#f0f0ed;--ok:#19734a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+button,input,textarea{font:inherit}button{cursor:pointer}
+.app{max-width:680px;margin:auto;padding:env(safe-area-inset-top) 16px calc(28px + env(safe-area-inset-bottom))}
+.top{padding:20px 2px 12px;display:flex;justify-content:space-between;align-items:center}.brand{font-size:21px;font-weight:750;letter-spacing:-.5px}.status{font-size:12px;color:var(--ok);background:#e8f5ee;padding:6px 9px;border-radius:999px}
+h1{font-size:30px;line-height:1.12;letter-spacing:-1px;margin:20px 0 8px}.sub{color:var(--muted);font-size:14px;line-height:1.55;margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px #00000008}
+.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px}.section-title{font-weight:700;font-size:16px}.tiny{font-size:12px;color:var(--muted)}
+textarea{width:100%;min-height:112px;border:1px solid var(--line);background:#fafaf8;border-radius:13px;padding:13px;outline:none;resize:vertical;line-height:1.55}textarea:focus,input:focus{border-color:#999}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}button.primary{background:var(--accent);color:#fff;border:0;border-radius:12px;padding:13px;font-weight:650}button.secondary{background:var(--soft);color:var(--text);border:0;border-radius:12px;padding:13px;font-weight:650}
+.opp{border:1px solid var(--line);border-radius:14px;padding:13px;margin-top:9px;background:#fcfcfb}.opp-title{font-weight:650;line-height:1.4}.opp-meta{font-size:12px;color:var(--muted);margin-top:7px;line-height:1.45}.opp button{margin-top:10px;width:100%;padding:10px;border:0;border-radius:10px;background:#eee}
+.result{display:none}.result.show{display:block}.post{font-size:18px;line-height:1.58;white-space:pre-wrap}.copy{width:100%;margin-top:12px;background:#111;color:#fff;border:0;border-radius:11px;padding:12px;font-weight:650}.alt{padding:12px;background:#f6f6f4;border-radius:12px;margin-top:9px;white-space:pre-wrap;line-height:1.5}.label{font-size:12px;color:var(--muted);margin-bottom:7px}.detail{font-size:13px;line-height:1.55;color:#444}.loading{opacity:.55;pointer-events:none}.empty{color:var(--muted);font-size:13px;padding:8px 0}.settings{margin-top:14px}.settings summary{color:var(--muted);font-size:13px;cursor:pointer}.token{margin-top:9px;width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff}
+.toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#111;color:#fff;padding:9px 14px;border-radius:999px;font-size:13px;display:none;z-index:9}
+@media(max-width:420px){h1{font-size:27px}.actions{grid-template-columns:1fr}.post{font-size:17px}}
 </style>
-<main><h2>123123 · 一键推文</h2>
-<p class="muted">输入主题，或直接使用“今日值得写”。结果只生成草稿，不自动发布。</p>
-<input id="token" type="password" placeholder="X-Radar-Token（仅本机 session 保存）">
-<textarea id="text" placeholder="例如：为什么 AI 产品更需要可靠的工作流，而不只是更大的模型？"></textarea>
-<div class="row"><button onclick="generate('idea')">生成推文</button><button onclick="generate('today')">今日值得写</button></div>
-<div id="out"></div></main>
+</head>
+<body><div class="app">
+<header class="top"><div class="brand">123123</div><div id="status" class="status">连接正常</div></header>
+<h1>今天发什么？</h1><p class="sub">从 Radar 找到值得写的机会，或直接输入你的想法。一键生成草稿，不会自动发布。</p>
+
+<section class="card">
+<div class="section-head"><span class="section-title">快速生成</span><span class="tiny">GLM-5.3-Flash</span></div>
+<textarea id="idea" placeholder="写下一个主题、观点或灵感…"></textarea>
+<div class="actions"><button class="primary" onclick="generate('idea')">生成推文</button><button class="secondary" onclick="generate('today')">今日值得写</button></div>
+</section>
+
+<section class="card">
+<div class="section-head"><span class="section-title">今日机会</span><button class="tiny" style="border:0;background:none" onclick="loadRadar()">刷新</button></div>
+<div id="opps"><div class="empty">正在读取 Radar…</div></div>
+</section>
+
+<section id="result" class="card result">
+<div class="section-head"><span class="section-title">生成结果</span><span id="model" class="tiny"></span></div>
+<div class="label">主稿</div><div id="post" class="post"></div>
+<button class="copy" onclick="copyText('post')">复制主稿</button>
+<div id="alts" style="margin-top:18px"></div>
+<div id="angle" style="margin-top:16px"></div>
+<div id="facts" style="margin-top:14px"></div>
+</section>
+
+<details class="settings"><summary>连接设置</summary><input id="token" class="token" type="password" placeholder="X-Radar-Token"></details>
+</div><div id="toast" class="toast"></div>
 <script>
 const $=id=>document.getElementById(id);
-async function generate(mode){
-  const token=$('token').value.trim(); if(!token){alert('请输入 token');return}
-  sessionStorage.setItem('radar_token',token);
-  const body={mode}; if(mode!=='today') body.text=$('text').value.trim();
-  if(mode!=='today'&&!body.text){alert('请输入主题');return}
-  $('out').innerHTML='<div class="card">生成中…</div>';
-  try{
-    const r=await fetch('/generate',{method:'POST',headers:{'Content-Type':'application/json','X-Radar-Token':token},body:JSON.stringify(body)});
-    const x=await r.json(); if(!r.ok) throw new Error(x.error||'请求失败');
-    $('out').innerHTML='<div class="card"><b>主稿</b>\n'+x.post+'\n\n<b>备选</b>\n'+(x.alternatives||[]).join('\n\n')+'\n\n<b>角度</b> '+(x.angle||'')+'\n\n<b>不确定性</b> '+(x.uncertainty||'')+'</div>';
-  }catch(e){$('out').innerHTML='<div class="card">错误：'+e.message+'</div>'}
-}
 $('token').value=sessionStorage.getItem('radar_token')||'';
-</script>
+function token(){const t=$('token').value.trim();if(t)sessionStorage.setItem('radar_token',t);return t}
+function toast(s){const x=$('toast');x.textContent=s;x.style.display='block';clearTimeout(window._toast);window._toast=setTimeout(()=>x.style.display='none',1800)}
+async function api(path,opts={}){const r=await fetch(path,opts);let x={};try{x=await r.json()}catch{}if(!r.ok)throw Error(x.error||('HTTP '+r.status));return x}
+async function loadRadar(){
+ const box=$('opps');box.innerHTML='<div class="empty">正在读取…</div>';
+ try{const x=await api('/radar');const list=x.opportunities||[];
+  if(!list.length){box.innerHTML='<div class="empty">暂无机会。可以直接输入主题生成。</div>';return}
+  box.innerHTML=list.slice(0,5).map((o,i)=>'<div class="opp"><div class="opp-title">'+esc(o.title)+'</div><div class="opp-meta">'+esc(o.angle||'暂无建议角度')+'</div><button onclick="generateOpportunity('+JSON.stringify(o.event_id)+')">用这个机会生成</button></div>').join('')
+ }catch(e){box.innerHTML='<div class="empty">Radar 暂时不可用：'+esc(e.message)+'</div>'}
+}
+async function generate(mode,extra={}){
+ if(!token()){document.querySelector('.settings').open=true;toast('请先填写 Token');return}
+ if(mode==='idea'&&!$('idea').value.trim()){toast('先输入一个主题或想法');return}
+ const btns=document.querySelectorAll('button');btns.forEach(b=>b.classList.add('loading'));
+ $('result').classList.add('show');$('post').textContent='正在生成…';$('alts').innerHTML='';$('angle').innerHTML='';$('facts').innerHTML='';
+ try{const body={mode,...extra};if(mode!=='today'&&!extra.opportunity_id)body.text=$('idea').value.trim();
+  const x=await api('/generate',{method:'POST',headers:{'Content-Type':'application/json','X-Radar-Token':token()},body:JSON.stringify(body)});
+  $('post').textContent=x.post||'';$('model').textContent=x.model||'';
+  $('alts').innerHTML=(x.alternatives||[]).map((a,i)=>'<div class="label">备选 '+(i+1)+'</div><div class="alt">'+esc(a)+'</div>').join('');
+  $('angle').innerHTML=x.angle?'<div class="label">写作角度</div><div class="detail">'+esc(x.angle)+'</div>':'';
+  $('facts').innerHTML=x.facts_used?.length?'<div class="label">使用的事实</div><div class="detail">'+x.facts_used.map(esc).join('<br>')+'</div>':'';
+  $('result').scrollIntoView({behavior:'smooth',block:'start'})
+ }catch(e){$('post').textContent='生成失败：'+e.message}
+ finally{btns.forEach(b=>b.classList.remove('loading'))}
+}
+function generateOpportunity(id){generate('opportunity',{opportunity_id:id})}
+async function copyText(id){try{await navigator.clipboard.writeText($(id).textContent);toast('已复制')}catch{toast('复制失败，请长按文本复制')}}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+loadRadar();
+</script></body></html>
