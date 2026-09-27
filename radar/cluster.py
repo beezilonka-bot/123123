@@ -57,9 +57,10 @@ def cluster_items(items: list[dict[str, Any]], threshold: float = 0.45) -> list[
         dated = [m for m in members if m.get("published_at")]
         dated.sort(key=lambda m: m["published_at"])
         representative = max(members, key=lambda m: len(m.get("summary") or ""))
+        identity_item = dated[0] if dated else sorted(members, key=lambda m: m.get("id", ""))[0]
+        identity = identity_item.get("id") or identity_item.get("canonical_url") or representative.get("title", "")
+        cluster_key = hashlib.sha256(str(identity).encode("utf-8")).hexdigest()[:16]
         sources = {m.get("source_id") for m in members if m.get("source_id")}
-        rep_tokens = sorted(title_tokens(representative.get("title", "")))
-        cluster_key = hashlib.sha256(" ".join(rep_tokens).encode("utf-8")).hexdigest()[:16]
         events.append({
             "id": f"event-{cluster_key}",
             "representative_item_id": representative.get("id"),
