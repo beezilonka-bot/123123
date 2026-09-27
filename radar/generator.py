@@ -71,7 +71,7 @@ def _call(prompt: str) -> dict[str, Any] | None:
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=45) as response:
+        with urllib.request.urlopen(req, timeout=60) as response:
             body = json.loads(response.read().decode("utf-8"))
         text = body["choices"][0]["message"]["content"]
         parsed = json.loads(text)
