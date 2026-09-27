@@ -20,6 +20,8 @@ from radar.storage import (
 DEFAULT_FEEDS = [
     ("bbc-news", "BBC News", "https://feeds.bbci.co.uk/news/rss.xml"),
     ("npr-news", "NPR News", "https://feeds.npr.org/1001/rss.xml"),
+    ("techcrunch", "TechCrunch", "https://techcrunch.com/feed/"),
+    ("the-verge", "The Verge", "https://www.theverge.com/rss/index.xml"),
 ]
 
 
