@@ -15,6 +15,7 @@ from radar.storage import (
     recent_opportunities,
     record_opportunity,
     velocity_history,
+    cleanup_duplicate_events,
 )
 
 DEFAULT_FEEDS = [
@@ -46,6 +47,8 @@ def collect_all_feeds():
 def collect_and_persist():
     topics = [x.strip() for x in os.getenv("RADAR_TOPICS", "").split(",") if x.strip()]
     items, errors = collect_all_feeds()
+    if db_enabled():
+        cleanup_duplicate_events()
     history = velocity_history() if db_enabled() else {}
     ranked = score_events(cluster_items(items), topics=topics, history=history)
     persisted = {"persisted_sources": 0, "persisted_items": 0, "persisted_events": 0}
