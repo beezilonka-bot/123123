@@ -41,3 +41,46 @@ STAGE-001：开源方案侦察与选型。
 FreshRSS 保留为 RSS 基础设施参考，不作为第一版核心依赖。
 
 下一小阶段：继续核验 Horizon 与 TrendRadar 的目录结构、评分/去重实现和数据流，然后再确定 Phase 2 技术组合。
+
+
+## STAGE-001B 第二轮：内部机制核验
+
+### Horizon
+公开源码文档确认其核心链路为：
+- Profile resolution
+- 内容准备（限制分析字符数、sampling，并加入 comments/engagement metadata）
+- LLM profile analysis
+- JSON 校验与失败重试
+- profile threshold filtering
+- topic deduplication
+- category quotas / final item cap
+- enrichment
+
+其评分不是固定的全局新闻分数，而是**按 profile 定义 rubric**，输出 0–10 分、原因、摘要和 tags。配置还支持时间窗口、并发度和 topic_dedup。
+
+对 123123 的启发：保留“采集后先筛选/聚类，再让 LLM 做深分析”的分层思想；不要照搬 Horizon 的 profile/enrichment 全套系统。
+
+### TrendRadar
+当前公开资料确认：
+- 项目目标是轻量热点监测；
+- 支持多平台热点与 RSS；
+- 支持 AI 分析、AI 智能筛选；
+- 支持关键词配置，并提供关键词共现分析；
+- README 当前版本标为 v6.10.0；
+- 数据获取还依赖 newsnow API，因此其数据供应链不能直接等同于我们的长期数据层。
+
+对 123123 的启发：可以借鉴“热点源 + RSS + 关键词/相关性 + AI 分析”的组合，但 Phase 2 仍应从我们可控的 RSS/Atom 源开始。
+
+### 当前技术结论
+Phase 2 最小闭环暂定：
+
+RSS/Atom → Normalize → Exact Dedup → Event Cluster → 基础趋势信号 → LLM Event Analysis → Today's Opportunities
+
+其中：
+- Exact Dedup 先处理 URL/规范化标题等确定性重复；
+- Event Cluster 再处理“不同文章讲同一事件”；
+- 基础趋势信号先使用 freshness、source_count、velocity 等可解释信号；
+- LLM 负责事件理解、重要性解释、受众相关性和内容机会提取；
+- 暂不引入复杂 Agent、复杂推荐模型或假设性的 X 官方权重。
+
+下一阶段：建立 123123 自己的最小 radar 数据模型和 RSS collector，先跑通真实数据，再迭代评分。
