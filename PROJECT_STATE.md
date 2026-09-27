@@ -1,10 +1,10 @@
 # Project State
 
 ## 当前版本
-v0.3.0
+v0.4.0
 
 ## 当前阶段
-STAGE-003 — 信息雷达闭环：RSS → Event → Trend → LLM Analysis
+STAGE-004 — 今日内容机会池与历史趋势
 
 ## 已完成
 - 创建新公开仓库 123123
@@ -35,6 +35,11 @@ STAGE-003 — 信息雷达闭环：RSS → Event → Trend → LLM Analysis
 - 分析结果成功写入 PostgreSQL
 
 ## 当前已知问题
+- GLM-5.3-Flash 已切换为默认 Radar 分析模型。
+- 历史 velocity 已接入事件历史数据，但仍需要更多采集周期才能形成稳定的速度曲线。
+- 当前机会池主要来自 RSS 事件；社交传播信号尚未接入。
+
+
 - 历史数据库中仍存在旧 Event ID，因此短期内可能看到同一事件的旧记录与新记录并存。
 - velocity 当前仍是基于当前事件体量的近似信号，还不是历史时间窗口速度。
 - RSS 来源目前只有 BBC News 与 NPR News。
