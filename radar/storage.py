@@ -139,6 +139,37 @@ def recent_analyses(limit: int = 10) -> dict[str, dict[str, Any]]:
         cols=[d.name for d in cur.description]
         return {str(row[0]):dict(zip(cols,row)) for row in rows}
 
+def record_opportunity(opportunity: dict[str, Any]) -> None:
+    if not enabled():
+        return
+    init_db()
+    with _connect() as conn, conn.cursor() as cur:
+        cur.execute("""INSERT INTO content_opportunities
+        (id,event_id,title,why_now,audience,angle,suggested_format,priority,expires_at)
+        VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        ON CONFLICT(id) DO UPDATE SET title=EXCLUDED.title,why_now=EXCLUDED.why_now,
+        audience=EXCLUDED.audience,angle=EXCLUDED.angle,suggested_format=EXCLUDED.suggested_format,
+        priority=EXCLUDED.priority""",
+        (opportunity["id"],opportunity["event_id"],opportunity["title"],
+         opportunity.get("why_now"),opportunity.get("audience"),opportunity.get("angle"),
+         opportunity.get("suggested_format","single_post"),opportunity.get("priority",0),
+         opportunity.get("expires_at")))
+        conn.commit()
+
+
+def recent_opportunities(limit: int = 20) -> list[dict[str, Any]]:
+    if not enabled():
+        return []
+    init_db()
+    with _connect() as conn, conn.cursor() as cur:
+        cur.execute("""SELECT id,event_id,title,why_now,audience,angle,suggested_format,
+                       priority,created_at,expires_at
+                       FROM content_opportunities
+                       ORDER BY priority DESC,created_at DESC LIMIT %s""",(limit,))
+        cols=[d.name for d in cur.description]
+        return [dict(zip(cols,row)) for row in cur.fetchall()]
+
+
 def recent_events(limit: int = 30) -> list[dict[str, Any]]:
     if not enabled():
         return []
