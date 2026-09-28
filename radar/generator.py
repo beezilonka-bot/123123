@@ -52,9 +52,13 @@ uncertainty: string
 """
 
 
-def _call(prompt: str) -> dict[str, Any] | None:
-    key, base, model = _llm_config()
-    if not key:
+def _call(prompt: str, llm: dict[str, Any] | None = None) -> dict[str, Any] | None:
+    default_key, default_base, default_model = _llm_config()
+    llm = llm or {}
+    key = str(llm.get("api_key") or default_key or "").strip()
+    base = str(llm.get("base_url") or default_base or "").strip().rstrip("/")
+    model = str(llm.get("model") or default_model or "").strip()
+    if not key or not base or not model:
         return None
     payload = {
         "model": model,
@@ -91,7 +95,7 @@ def _call(prompt: str) -> dict[str, Any] | None:
 
 
 def generate_post(request: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
-    result = _call(_build_prompt(request, context))
+    result = _call(_build_prompt(request, context), request.get("llm"))
     if not result:
         return {"ok": False, "error": "llm_unavailable"}
     if "_error" in result:

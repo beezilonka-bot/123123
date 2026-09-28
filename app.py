@@ -185,8 +185,6 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path not in ("/account/import", "/generate"):
             return self._json(404, {"ok": False, "error": "not_found"})
-        if not self._authorized():
-            return self._json(401, {"ok": False, "error": "unauthorized"})
         if parsed.path == "/generate":
             try:
                 length = int(self.headers.get("Content-Length", "0"))
@@ -198,11 +196,20 @@ class Handler(BaseHTTPRequestHandler):
                 mode = str(payload.get("mode") or "text")
                 if mode not in ("text", "topic", "idea", "url", "today", "opportunity"):
                     return self._json(400, {"ok": False, "error": "invalid mode"})
+                supplied_llm = payload.get("llm") if isinstance(payload.get("llm"), dict) else {}
+                supplied_key = str(supplied_llm.get("api_key") or "").strip()
+                if not self._authorized() and not supplied_key:
+                    return self._json(401, {"ok": False, "error": "请在设置中填写模型 API Key"})
                 request = {
                     "mode": mode,
                     "text": str(payload.get("text") or payload.get("topic") or payload.get("idea") or "")[:5000],
                     "source_url": str(payload.get("source_url") or payload.get("url") or "")[:2000],
                     "opportunity_id": str(payload.get("opportunity_id") or "")[:200],
+                    "llm": {
+                        "api_key": supplied_key,
+                        "base_url": str(supplied_llm.get("base_url") or "")[:500],
+                        "model": str(supplied_llm.get("model") or "")[:200],
+                    },
                 }
                 if mode in ("text", "topic", "idea", "url") and not (request["text"] or request["source_url"]):
                     return self._json(400, {"ok": False, "error": "text/topic/idea/url is required"})

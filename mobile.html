@@ -1,86 +1,110 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f5f5f3">
-<title>123123 · 推文工作台</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f7f7f5">
+<title>123123 · X 创作工作台</title>
 <style>
-:root{--bg:#f5f5f3;--card:#fff;--text:#171717;--muted:#777;--line:#e5e5e2;--accent:#111;--soft:#f0f0ed;--ok:#19734a}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
-button,input,textarea{font:inherit}button{cursor:pointer}
-.app{max-width:680px;margin:auto;padding:env(safe-area-inset-top) 16px calc(28px + env(safe-area-inset-bottom))}
-.top{padding:20px 2px 12px;display:flex;justify-content:space-between;align-items:center}.brand{font-size:21px;font-weight:750;letter-spacing:-.5px}.status{font-size:12px;color:var(--ok);background:#e8f5ee;padding:6px 9px;border-radius:999px}
-h1{font-size:30px;line-height:1.12;letter-spacing:-1px;margin:20px 0 8px}.sub{color:var(--muted);font-size:14px;line-height:1.55;margin:0 0 20px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px #00000008}
-.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px}.section-title{font-weight:700;font-size:16px}.tiny{font-size:12px;color:var(--muted)}
-textarea{width:100%;min-height:112px;border:1px solid var(--line);background:#fafaf8;border-radius:13px;padding:13px;outline:none;resize:vertical;line-height:1.55}textarea:focus,input:focus{border-color:#999}
-.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}button.primary{background:var(--accent);color:#fff;border:0;border-radius:12px;padding:13px;font-weight:650}button.secondary{background:var(--soft);color:var(--text);border:0;border-radius:12px;padding:13px;font-weight:650}
-.opp{border:1px solid var(--line);border-radius:14px;padding:13px;margin-top:9px;background:#fcfcfb}.opp-title{font-weight:650;line-height:1.4}.opp-meta{font-size:12px;color:var(--muted);margin-top:7px;line-height:1.45}.opp button{margin-top:10px;width:100%;padding:10px;border:0;border-radius:10px;background:#eee}
-.result{display:none}.result.show{display:block}.post{font-size:18px;line-height:1.58;white-space:pre-wrap}.copy{width:100%;margin-top:12px;background:#111;color:#fff;border:0;border-radius:11px;padding:12px;font-weight:650}.alt{padding:12px;background:#f6f6f4;border-radius:12px;margin-top:9px;white-space:pre-wrap;line-height:1.5}.label{font-size:12px;color:var(--muted);margin-bottom:7px}.detail{font-size:13px;line-height:1.55;color:#444}.loading{opacity:.55;pointer-events:none}.empty{color:var(--muted);font-size:13px;padding:8px 0}.settings{margin-top:14px}.settings summary{color:var(--muted);font-size:13px;cursor:pointer}.token{margin-top:9px;width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff}
-.toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#111;color:#fff;padding:9px 14px;border-radius:999px;font-size:13px;display:none;z-index:9}
-@media(max-width:420px){h1{font-size:27px}.actions{grid-template-columns:1fr}.post{font-size:17px}}
+:root{--bg:#f7f7f5;--surface:#fff;--ink:#111;--muted:#747474;--line:#e6e6e1;--soft:#f0f0ec;--accent:#111;--green:#16734a;--red:#b23b2e;--shadow:0 8px 30px rgba(0,0,0,.055)}
+*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit}button{border:0;cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}
+.shell{max-width:720px;margin:auto;padding:0 16px calc(96px + env(safe-area-inset-bottom))}
+.top{height:72px;display:flex;align-items:center;justify-content:space-between}.brand{font-weight:800;font-size:21px;letter-spacing:-.7px}.top-right{display:flex;gap:8px;align-items:center}.pill{border-radius:999px;padding:7px 10px;background:#e9f5ee;color:var(--green);font-size:12px;font-weight:650}.icon-btn{width:38px;height:38px;border-radius:50%;background:var(--surface);border:1px solid var(--line);font-size:17px}
+.page{display:none}.page.active{display:block}.hero{padding:18px 2px 20px}.eyebrow{font-size:12px;color:var(--muted);font-weight:650;letter-spacing:.04em}.hero h1{font-size:34px;line-height:1.05;letter-spacing:-1.5px;margin:8px 0}.hero p{margin:0;color:var(--muted);font-size:14px;line-height:1.55}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.title{font-size:16px;font-weight:750}.muted{font-size:12px;color:var(--muted)}
+textarea,input,select{width:100%;border:1px solid var(--line);background:#fbfbf9;border-radius:14px;padding:13px;outline:none;color:var(--ink)}textarea:focus,input:focus,select:focus{border-color:#999;background:#fff}
+.prompt{min-height:142px;line-height:1.55;resize:none}.row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}.btn{padding:13px 14px;border-radius:13px;font-weight:700}.primary{background:#111;color:#fff}.secondary{background:var(--soft);color:#111}
+.chips{display:flex;gap:7px;overflow:auto;padding-bottom:2px}.chip{white-space:nowrap;padding:8px 11px;border-radius:999px;background:var(--soft);font-size:12px}.chip.on{background:#111;color:#fff}
+.opp{padding:14px;border:1px solid var(--line);border-radius:17px;margin-top:9px}.opp h3{font-size:16px;line-height:1.35;margin:0 0 6px}.opp p{font-size:12px;color:var(--muted);line-height:1.5;margin:0}.opp .btn{width:100%;margin-top:10px;padding:10px}
+.result{display:none}.result.show{display:block}.result-text{width:100%;min-height:180px;background:#fafaf8;font-size:18px;line-height:1.62;resize:vertical}.counter{display:flex;justify-content:space-between;margin-top:7px;color:var(--muted);font-size:11px}.alt{padding:12px;border-radius:13px;background:var(--soft);margin-top:8px;font-size:14px;line-height:1.5;white-space:pre-wrap}.label{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.03em;margin-top:15px;margin-bottom:6px}.detail{font-size:13px;color:#444;line-height:1.55}
+.setting-row{padding:14px 0;border-bottom:1px solid var(--line)}.setting-row:last-child{border-bottom:0}.setting-label{font-size:14px;font-weight:700;margin-bottom:7px}.setting-help{font-size:11px;color:var(--muted);line-height:1.45;margin-top:6px}.secret-wrap{position:relative}.secret-wrap input{padding-right:70px}.show-key{position:absolute;right:8px;top:7px;background:var(--soft);border-radius:9px;padding:6px 8px;font-size:11px}
+.notice{padding:11px 12px;border-radius:13px;background:#f4f4f0;color:#555;font-size:12px;line-height:1.5}.ok{background:#eaf6ef;color:var(--green)}.error{background:#fff0ed;color:var(--red)}
+.bottom{position:fixed;left:0;right:0;bottom:0;padding:8px 16px calc(8px + env(safe-area-inset-bottom));background:rgba(247,247,245,.92);backdrop-filter:blur(16px);border-top:1px solid var(--line);z-index:10}.nav{max-width:680px;margin:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.nav button{background:transparent;border-radius:13px;padding:9px 4px;color:var(--muted);font-size:11px}.nav button.active{background:#111;color:#fff}.nav b{display:block;font-size:16px;line-height:18px;margin-bottom:2px}
+.toast{position:fixed;z-index:30;left:50%;bottom:92px;transform:translateX(-50%);background:#111;color:#fff;border-radius:999px;padding:9px 14px;font-size:12px;display:none;max-width:88%;white-space:nowrap}
+.loading{position:relative}.loading:after{content:"";display:inline-block;width:12px;height:12px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;margin-left:7px;vertical-align:-2px;animation:spin .7s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+@media(min-width:680px){.hero{padding-top:30px}.hero h1{font-size:42px}}
 </style>
 </head>
-<body><div class="app">
-<header class="top"><div class="brand">123123</div><div id="status" class="status">连接检查中</div></header>
-<h1>今天发什么？</h1><p class="sub">从 Radar 找到值得写的机会，或直接输入你的想法。一键生成草稿，不会自动发布。</p>
+<body>
+<div class="shell">
+<header class="top"><div class="brand">123123</div><div class="top-right"><span id="apiPill" class="pill">模型未设置</span><button class="icon-btn" onclick="showPage('settings')">⚙</button></div></header>
+
+<main id="create" class="page active">
+<section class="hero"><div class="eyebrow">X CREATOR WORKSPACE</div><h1>今天写什么？</h1><p>从 Radar 找机会，或者把一个想法交给模型。生成后你可以继续编辑，不会自动发布。</p></section>
 
 <section class="card">
-<div class="section-head"><span class="section-title">快速生成</span><span class="tiny">GLM-5.3-Flash</span></div>
-<textarea id="idea" placeholder="写下一个主题、观点或灵感…"></textarea>
-<div class="actions"><button class="primary" onclick="generate('idea')">生成推文</button><button class="secondary" onclick="generate('today')">今日值得写</button></div>
-</section>
-
-<section class="card">
-<div class="section-head"><span class="section-title">今日机会</span><button class="tiny" style="border:0;background:none" onclick="loadRadar()">刷新</button></div>
-<div id="opps"><div class="empty">正在读取 Radar…</div></div>
+<div class="card-head"><span class="title">快速创作</span><span class="muted" id="modelBadge">未配置模型</span></div>
+<textarea id="idea" class="prompt" placeholder="例如：最近 AI Agent 的变化，想写得像一个长期关注 AI 的创作者，不要营销腔。"></textarea>
+<div class="label" style="margin-top:12px">语气</div>
+<div class="chips" id="tone"><button class="chip on" data-tone="自然">自然</button><button class="chip" data-tone="犀利">犀利</button><button class="chip" data-tone="分析">分析</button><button class="chip" data-tone="轻松">轻松</button><button class="chip" data-tone="简洁">简洁</button></div>
+<div class="row"><button id="genBtn" class="btn primary" onclick="generate('idea')">生成推文</button><button class="btn secondary" onclick="generate('today')">今日值得写</button></div>
 </section>
 
 <section id="result" class="card result">
-<div class="section-head"><span class="section-title">生成结果</span><span id="model" class="tiny"></span></div>
-<div class="label">主稿</div><div id="post" class="post"></div>
-<button class="copy" onclick="copyText('post')">复制主稿</button>
-<div id="alts" style="margin-top:18px"></div>
-<div id="angle" style="margin-top:16px"></div>
-<div id="facts" style="margin-top:14px"></div>
+<div class="card-head"><span class="title">生成结果</span><button class="muted" style="background:none" onclick="copyPost()">复制</button></div>
+<textarea id="post" class="result-text"></textarea><div class="counter"><span>可以直接编辑</span><span id="count">0 / 280</span></div>
+<div id="alternatives"></div><div id="meta"></div>
+<div class="row"><button class="btn secondary" onclick="copyPost()">复制主稿</button><button class="btn primary" onclick="regenerate()">重新生成</button></div>
 </section>
+</main>
 
-<details class="settings"><summary>连接设置</summary><input id="token" class="token" type="password" placeholder="X-Radar-Token"></details>
-</div><div id="toast" class="toast"></div>
+<main id="radar" class="page">
+<section class="hero"><div class="eyebrow">RADAR</div><h1>值得写的机会</h1><p>把近期信号整理成适合创作的切入点。标题显示为中文，原始来源仍保留在后台。</p></section>
+<section class="card"><div class="card-head"><span class="title">今日 Radar</span><button class="muted" style="border:0;background:none" onclick="loadRadar()">刷新</button></div><div id="opps"><div class="notice">正在读取 Radar…</div></div></section>
+</main>
+
+<main id="settings" class="page">
+<section class="hero"><div class="eyebrow">SETTINGS</div><h1>模型设置</h1><p>API Key 只保存在当前浏览器会话，不写入项目文件。你可以使用任意 OpenAI-compatible 接口。</p></section>
+<section class="card">
+<div class="setting-row"><div class="setting-label">API Key</div><div class="secret-wrap"><input id="apiKey" type="password" autocomplete="off" placeholder="粘贴你的模型 API Key"><button class="show-key" onclick="toggleKey()">显示</button></div><div class="setting-help">例如你的 TierFlow / OpenAI-compatible Key。关闭浏览器会话后不会保留。</div></div>
+<div class="setting-row"><div class="setting-label">API Base URL</div><input id="baseUrl" placeholder="https://tierflow.cn/v1"></div>
+<div class="setting-row"><div class="setting-label">模型</div><input id="model" placeholder="GLM-5.3-Flash"></div>
+<div class="setting-row"><button class="btn primary" style="width:100%" onclick="saveSettings()">保存设置</button></div>
+<div id="settingStatus" class="notice">尚未配置模型。</div>
+</section>
+<section class="card">
+<div class="card-head"><span class="title">当前连接</span></div>
+<div class="notice">服务地址：45.207.200.18:18092<br>Radar：已连接<br>自动发布：关闭</div>
+</section>
+</main>
+</div>
+
+<nav class="bottom"><div class="nav"><button id="nav-create" class="active" onclick="showPage('create')"><b>＋</b>创作</button><button id="nav-radar" onclick="showPage('radar')"><b>◉</b>Radar</button><button id="nav-settings" onclick="showPage('settings')"><b>⚙</b>设置</button></div></nav>
+<div id="toast" class="toast"></div>
+
 <script>
 const $=id=>document.getElementById(id);
-$('token').value=sessionStorage.getItem('radar_token')||'';
-function token(){const t=$('token').value.trim();if(t)sessionStorage.setItem('radar_token',t);return t}
-function toast(s){const x=$('toast');x.textContent=s;x.style.display='block';clearTimeout(window._toast);window._toast=setTimeout(()=>x.style.display='none',1800)}
-async function api(path,opts={}){const r=await fetch(path,opts);let x={};try{x=await r.json()}catch{}if(!r.ok)throw Error(x.error||('HTTP '+r.status));return x}
-async function loadRadar(){
- const box=$('opps');box.innerHTML='<div class="empty">正在读取…</div>';
- try{const x=await api('/radar');const list=x.opportunities||[];
-  if(!list.length){box.innerHTML='<div class="empty">暂无机会。可以直接输入主题生成。</div>';return}
-  box.innerHTML=list.slice(0,5).map((o,i)=>'<div class="opp"><div class="opp-title">'+esc(o.title)+'</div><div class="opp-meta">'+esc(o.angle||'暂无建议角度')+'</div><button onclick="generateOpportunity('+JSON.stringify(o.event_id)+')">用这个机会生成</button></div>').join('')
- }catch(e){box.innerHTML='<div class="empty">Radar 暂时不可用：'+esc(e.message)+'</div>'}
-}
-async function generate(mode,extra={}){
- if(!token()){document.querySelector('.settings').open=true;toast('请先填写 Token');return}
- if(mode==='idea'&&!$('idea').value.trim()){toast('先输入一个主题或想法');return}
- const btns=document.querySelectorAll('button');btns.forEach(b=>b.classList.add('loading'));
- $('result').classList.add('show');$('post').textContent='正在生成…';$('alts').innerHTML='';$('angle').innerHTML='';$('facts').innerHTML='';
- try{const body={mode,...extra};if(mode!=='today'&&!extra.opportunity_id)body.text=$('idea').value.trim();
-  const x=await api('/generate',{method:'POST',headers:{'Content-Type':'application/json','X-Radar-Token':token()},body:JSON.stringify(body)});
-  $('post').textContent=x.post||'';$('model').textContent=x.model||'';
-  $('alts').innerHTML=(x.alternatives||[]).map((a,i)=>'<div class="label">备选 '+(i+1)+'</div><div class="alt">'+esc(a)+'</div>').join('');
-  $('angle').innerHTML=x.angle?'<div class="label">写作角度</div><div class="detail">'+esc(x.angle)+'</div>':'';
-  $('facts').innerHTML=x.facts_used?.length?'<div class="label">使用的事实</div><div class="detail">'+x.facts_used.map(esc).join('<br>')+'</div>':'';
-  $('result').scrollIntoView({behavior:'smooth',block:'start'})
- }catch(e){$('post').textContent='生成失败：'+e.message}
- finally{btns.forEach(b=>b.classList.remove('loading'))}
-}
-function generateOpportunity(id){generate('opportunity',{opportunity_id:id})}
-async function copyText(id){try{await navigator.clipboard.writeText($(id).textContent);toast('已复制')}catch{toast('复制失败，请长按文本复制')}}
+let lastRequest=null;
+const store={key:'x123_api_key',base:'x123_base_url',model:'x123_model'};
+$('apiKey').value=sessionStorage.getItem(store.key)||'';
+$('baseUrl').value=sessionStorage.getItem(store.base)||'https://tierflow.cn/v1';
+$('model').value=sessionStorage.getItem(store.model)||'GLM-5.3-Flash';
+document.querySelectorAll('#tone .chip').forEach(x=>x.onclick=()=>{document.querySelectorAll('#tone .chip').forEach(y=>y.classList.remove('on'));x.classList.add('on')});
+function settings(){return{api_key:$('apiKey').value.trim(),base_url:$('baseUrl').value.trim()||'https://tierflow.cn/v1',model:$('model').value.trim()||'GLM-5.3-Flash'}}
+function saveSettings(){const s=settings();if(!s.api_key){toast('请先填写 API Key');return}sessionStorage.setItem(store.key,s.api_key);sessionStorage.setItem(store.base,s.base_url);sessionStorage.setItem(store.model,s.model);refreshStatus();$('settingStatus').className='notice ok';$('settingStatus').textContent='已保存到本次浏览器会话。';toast('模型设置已保存')}
+function refreshStatus(){const s=settings();const ok=!!s.api_key; $('apiPill').textContent=ok?'模型已设置':'模型未设置';$('apiPill').className='pill';$('modelBadge').textContent=ok?s.model:'未配置模型'}
+function toggleKey(){const x=$('apiKey');x.type=x.type==='password'?'text':'password';event.target.textContent=x.type==='password'?'显示':'隐藏'}
+function showPage(name){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));$(name).classList.add('active');document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));$('nav-'+name).classList.add('active');window.scrollTo({top:0,behavior:'smooth'});if(name==='radar')loadRadar()}
+function toast(s){const x=$('toast');x.textContent=s;x.style.display='block';clearTimeout(window._t);window._t=setTimeout(()=>x.style.display='none',1800)}
+async function api(path,opts={}){const r=await fetch(path,opts);let x={};try{x=await r.json()}catch{}if(!r.ok)throw Error(x.error||x.detail||('HTTP '+r.status));return x}
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-async function checkHealth(){
- try{const x=await api('/health');$('status').textContent=x.llm_configured?'模型 API 已连接':'模型 API 未配置';$('status').style.background=x.llm_configured?'#e8f5ee':'#fff0e8';$('status').style.color=x.llm_configured?'#19734a':'#9a4b12'}
- catch{$('status').textContent='服务连接异常';$('status').style.background='#fff0e8';$('status').style.color='#9a4b12'}
-}
-checkHealth();loadRadar();
-</script></body></html>
+async function loadRadar(){const box=$('opps');box.innerHTML='<div class="notice">正在读取…</div>';try{const x=await api('/radar');const list=x.opportunities||[];if(!list.length){box.innerHTML='<div class="notice">暂无机会。</div>';return}box.innerHTML=list.slice(0,8).map(o=>'<article class="opp"><h3>'+esc(o.title)+'</h3><p>'+esc(o.angle||'发生了什么，以及这次变化与此前有什么不同。')+'</p><button class="btn secondary" onclick="useOpp('+JSON.stringify(o.event_id)+')">用这个机会写</button></article>').join('')}catch(e){box.innerHTML='<div class="notice error">'+esc(e.message)+'</div>'}}
+function useOpp(id){showPage('create');generate('opportunity',{opportunity_id:id})}
+function setBusy(on){$('genBtn').disabled=on;$('genBtn').classList.toggle('loading',on)}
+async function generate(mode,extra={}){
+const s=settings();if(!s.api_key){showPage('settings');toast('先配置模型 API Key');return}
+if(mode==='idea'&&!$('idea').value.trim()){toast('先写一个主题或想法');return}
+const tone=document.querySelector('#tone .on')?.dataset.tone||'自然';
+const body={mode,...extra,llm:s};if(mode!=='today'&&!extra.opportunity_id)body.text=$('idea').value.trim();body.text=(body.text||'')+'\n写作要求：语气='+tone+'。';
+lastRequest=body;setBusy(true);$('result').classList.add('show');$('post').value='正在连接模型并生成…';$('count').textContent='生成中…';$('alternatives').innerHTML='';$('meta').innerHTML='';
+try{const x=await api('/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});$('post').value=x.post||'';updateCount();$('alternatives').innerHTML=(x.alternatives||[]).map((a,i)=>'<div class="label">备选 '+(i+1)+'</div><div class="alt">'+esc(a)+'</div>').join('');$('meta').innerHTML=(x.angle?'<div class="label">写作角度</div><div class="detail">'+esc(x.angle)+'</div>':'')+(x.uncertainty?'<div class="label">不确定性</div><div class="detail">'+esc(x.uncertainty)+'</div>':'');$('result').scrollIntoView({behavior:'smooth',block:'start'})}catch(e){$('post').value='生成失败：'+e.message;$('count').textContent='';toast('生成失败，请检查模型设置')}finally{setBusy(false)}}
+function regenerate(){if(lastRequest)generate(lastRequest.mode,{opportunity_id:lastRequest.opportunity_id||''})}
+function updateCount(){const n=[...$('post').value].length;$('count').textContent=n+' / 280';$('count').style.color=n>280?'#b23b2e':'#747474'}
+$('post').addEventListener('input',updateCount);
+async function copyPost(){const t=$('post').value;if(!t)return;try{await navigator.clipboard.writeText(t);toast('已复制')}catch{toast('复制失败，可长按文本复制')}}
+refreshStatus();loadRadar();
+</script>
+</body>
+</html>
